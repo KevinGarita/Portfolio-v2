@@ -39,9 +39,9 @@ No numeric KPIs were defined for this project. Success is qualitative: the deplo
 - The nav highlights the section currently in view (scrollspy).
 
 ### Hero
-- Displays name, professional title, and a short tagline.
-- CTA buttons: social links, email, and CV download/view.
-- A subtle infinite-scroll marquee strip of technology logos.
+- Displays name, professional title, a short row of role tags, and a short tagline.
+- CTA buttons: an email action (with a pre-filled subject), CV download/view, and social icon buttons limited to LinkedIn and GitHub (no other networks).
+- A subtle infinite-scroll marquee strip of technology names.
 
 ### About
 - Dedicated section (separate from the Hero) for Kevin's personal bio/introduction.
@@ -51,18 +51,19 @@ No numeric KPIs were defined for this project. Success is qualitative: the deplo
 
 ### Education & Certificates
 - Single collection covering both academic degrees and courses/certificates (as in the previous version of the portfolio).
-- Each entry shows an institution/platform name, a subtitle (degree or course name), a logo, a date range, and free-form markdown content (credential ID, description, duration, etc.) rendered as a list.
+- Each entry shows an institution/platform name, a subtitle (degree or course name), a logo (when available — falls back to a decorative placeholder if not), and a year-only date display (e.g. "2014 — 2018", or a single year when start and end match). The markdown content (credential ID, description, duration, etc.) is rendered as written, not forced into a specific list format.
 
 ### Work Experience
-- Timeline of jobs, each with company name, role, logo, date range, and markdown content rendered as achievement bullets.
+- Timeline of jobs, each with company name, role, a logo (when available), and a date/status line: a year range with an optional location/work-mode tag (e.g. "Remote", "Hybrid"), or "<year> — Present" for the current role. Markdown content is rendered as achievement bullets.
 
 ### Projects
-- Grid/list of project cards on the landing page: title, short description, image, date range, technology tags, and optional demo/source links.
-- Each project also has its own individual detail page with a real, shareable URL (e.g. `/projects/[slug]`), showing the full project content. Visually this follows the Claude Design "case study" layout; the design shows this opening as an in-page overlay, but it is implemented as a real page instead so it has its own link to share.
+- The landing page shows one project as a large, featured card and the rest as smaller cards in a grid; if none is marked as featured, the most recent project is featured automatically. Each card shows title, description, an image (when available), a discreet date label, technology tags, and optional demo/source links. A link near the section heading points to Kevin's full GitHub profile.
+- Each project also has its own individual detail page with a real, shareable URL (e.g. `/projects/[slug]`), showing the full project content laid out from its markdown (sectioned headings, screenshots, and result/metric highlights). Visually this follows the Claude Design "case study" layout; the design shows this opening as an in-page overlay, but it is implemented as a real page instead so it has its own link to share. A "next project" link at the end follows the same order as the landing page.
 
 ### Contact
 - Final section with no contact form.
-- Shows social links, an email button (mailto), and a CV download/view button.
+- Shows an email button (mailto, pre-filled subject), a CV download/view button, and social links limited to LinkedIn and GitHub.
+- The footer shows the copyright line with the current year.
 
 ## 8. Out of scope
 - Contact form of any kind.
@@ -77,6 +78,7 @@ No numeric KPIs were defined for this project. Success is qualitative: the deplo
 - Content (bios, real project descriptions, real experience/education entries) will be added later by Kevin directly as markdown files; this PRD does not include real content.
 - The Claude Design mockup includes a few mockup-only affordances that do not carry over to the real site: a drag-and-drop image upload placeholder for the About portrait (the real site uses a fixed image Kevin configures), decorative placeholder blocks standing in for real institution/company logos (the real site uses actual logo images), and some interface copy shown in Spanish as placeholder/lorem text (the real site's content is written in English, per the language constraint below).
 - The design has no light mode or theme toggle; the site is dark-only.
+- The site's actual English section headings/copy (as implemented) are: "Toolbox" (Skills), "Education & credentials" (Education & Certificates), "Career path" (Work Experience), "Selected work" (Projects), "Let’s build something together" (Contact heading), "Home" (nav), and "— in progress" as the suffix for an ongoing Hero role tag. Noted here for the record, since the Claude Design mockup itself used Spanish placeholder copy for these labels.
 
 ## 10. Constraints
 - English-only content; no i18n.
