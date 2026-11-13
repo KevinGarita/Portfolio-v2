@@ -1,0 +1,148 @@
+---
+import { hero, site } from "../data/site";
+import CodePanel from "./CodePanel.astro";
+import Button from "./ui/Button.astro";
+import Marquee from "./ui/Marquee.astro";
+import Reveal from "./ui/Reveal.astro";
+
+const [first, last] = site.name.split(" ");
+---
+
+<section
+	id="hero"
+	class="relative scroll-mt-nav overflow-hidden px-gutter pt-hero-top"
+>
+	<div class="hero-grid pointer-events-none absolute inset-0"></div>
+	<div
+		class="glow-accent pointer-events-none absolute -top-55 left-1/2 h-130 w-225 -translate-x-1/2 blur-[20px]"
+	>
+	</div>
+
+	<div class="relative mx-auto max-w-page">
+		{
+			hero.available && (
+				<Reveal class="inline-flex items-center gap-2.25 rounded-full border border-white/12 bg-white/2 px-3.5 py-1.75 font-mono text-label uppercase tracking-[0.09em] text-muted">
+					<span class="block size-1.75 rounded-full bg-success" />
+					{hero.availability}
+				</Reveal>
+			)
+		}
+
+		<div
+			class="mt-7 grid grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-14"
+		>
+			<h1
+				aria-label={site.name}
+				class="m-0 font-serif text-hero font-normal leading-[0.9] tracking-[-0.025em]"
+			>
+				<span data-scramble-text aria-hidden="true" class="block">{first}</span>
+				<em
+					data-scramble-text
+					data-scramble-delay="260"
+					aria-hidden="true"
+					class="block pl-[0.42em] italic text-accent">{last}</em
+				>
+			</h1>
+			<Reveal delay={140}>
+				<CodePanel />
+			</Reveal>
+		</div>
+
+		<!-- 3 → 1 columns (never 2 + 1), switching where three 220px boxes stop fitting -->
+		<div class="@container mt-12">
+			<Reveal
+				delay={160}
+				class="grid grid-cols-1 gap-px overflow-hidden rounded-card bg-white/9 p-px @min-[664px]:grid-cols-3"
+			>
+				{
+					hero.roles.map((role, i) => (
+						<div class="flex items-baseline gap-3.5 bg-surface px-5.5 py-5">
+							<span class="font-mono text-label text-accent">
+								{String(i + 1).padStart(2, "0")}
+							</span>
+							<span class="text-role font-medium text-ink">
+								{role.label}
+								{role.note && " "}
+								{role.note && (
+									<em class="font-serif text-[1.08em] font-normal italic text-muted">
+										{role.note}
+									</em>
+								)}
+							</span>
+						</div>
+					))
+				}
+			</Reveal>
+		</div>
+
+		<Reveal
+			delay={200}
+			class="mt-9 flex flex-wrap items-end justify-between gap-9"
+		>
+			<div class="max-w-[52ch]">
+				<p class="m-0 text-role leading-[1.62] text-pretty text-muted">
+					{hero.tagline}
+				</p>
+			</div>
+			<div class="flex flex-wrap gap-3">
+				<Button href={site.mailto}>Email me</Button>
+				<Button
+					href={site.cv}
+					variant="outline"
+					target="_blank"
+					rel="noopener noreferrer">Download CV</Button
+				>
+				{
+					site.socials.map((s) => (
+						<Button
+							href={s.href}
+							variant="icon"
+							aria-label={s.label}
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							{s.short}
+						</Button>
+					))
+				}
+			</div>
+		</Reveal>
+	</div>
+
+	<Marquee items={hero.tech} />
+</section>
+
+<script>
+	// Name intro: each letter resolves from random glyphs, left to right.
+	const CHARS =
+		"01<>{}[]()/\\|=+-*&^%$#@!?;:.,_~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	const rnd = () => CHARS[(Math.random() * CHARS.length) | 0];
+
+	if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+		for (const el of document.querySelectorAll<HTMLElement>(
+			"[data-scramble-text]",
+		)) {
+			const target = (el.textContent ?? "").trim();
+			el.textContent = target.replace(/\S/g, rnd);
+			let frame = 0;
+			setTimeout(
+				() => {
+					const iv = setInterval(() => {
+						frame++;
+						const solved = Math.floor(frame / 3);
+						let out = "";
+						for (let i = 0; i < target.length; i++) {
+							out += i < solved ? target[i] : rnd();
+						}
+						el.textContent = out;
+						if (solved >= target.length) {
+							clearInterval(iv);
+							el.textContent = target;
+						}
+					}, 38);
+				},
+				250 + Number(el.dataset.scrambleDelay ?? 0),
+			);
+		}
+	}
+</script>

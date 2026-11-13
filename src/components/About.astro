@@ -1,0 +1,119 @@
+---
+import { Image } from "astro:assets";
+import { about } from "../data/site";
+import Reveal from "./ui/Reveal.astro";
+---
+
+<section id="about" class="scroll-mt-nav px-gutter py-section">
+	<div class="mx-auto max-w-page">
+	<!-- The eyebrow sits above both columns so the portrait and the headline share a top edge. -->
+	<Reveal
+		as="p"
+		class="mb-5 font-mono text-xs uppercase tracking-eyebrow text-dim"
+	>
+		01 — About
+	</Reveal>
+	<div
+		class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-18"
+	>
+		<Reveal>
+			<div
+				data-portrait
+				class="relative aspect-4/5 overflow-hidden rounded-md border border-white/10 bg-portrait"
+			>
+				<Image
+					src={about.portrait}
+					alt={about.portraitAlt}
+					widths={[400, 800]}
+					sizes="(min-width: 900px) 560px, 100vw"
+					class="absolute inset-0 size-full object-cover brightness-95 contrast-106 grayscale"
+				/>
+				<div
+					class="pointer-events-none absolute inset-0 bg-linear-to-b from-transparent from-55% to-bg/72"
+				>
+				</div>
+				<div
+					class="pointer-events-none absolute inset-x-4.5 bottom-4 flex justify-between gap-3 font-mono text-tiny uppercase tracking-caps text-ink-soft"
+				>
+					<span data-hover-scramble>{about.location}</span>
+					<span data-hover-scramble class="text-accent">{about.role}</span>
+				</div>
+			</div>
+		</Reveal>
+
+		<Reveal delay={90}>
+			<h2
+				class="mb-6.5 font-serif text-h2-lg font-normal leading-[1.1] tracking-[-0.015em] text-pretty"
+			>
+				{about.headline}
+			</h2>
+			{
+				about.paragraphs.map((p) => (
+					<p class="mb-4.5 max-w-[62ch] text-lead leading-[1.72] text-pretty text-muted last-of-type:mb-0">
+						{p}
+					</p>
+				))
+			}
+		</Reveal>
+	</div>
+
+		<Reveal delay={150} class="mt-18">
+			<div
+				class="grid overflow-hidden rounded-card border border-white/9 divide-white/9 max-lg:divide-y lg:grid-cols-3 lg:divide-x"
+			>
+				{
+					about.focus.map((f, i) => (
+						<div class="flex gap-5 p-6 transition-colors duration-300 hover:bg-white/2 lg:p-7">
+							<span class="w-4.5 flex-none font-serif text-letter italic leading-none text-accent">
+								{String.fromCharCode(97 + i)}
+							</span>
+							<div>
+								<h3 class="mb-1.5 text-lead font-medium text-ink">{f.title}</h3>
+								<p class="max-w-[52ch] text-body-sm leading-[1.6] text-muted">
+									{f.text}
+								</p>
+							</div>
+						</div>
+					))
+				}
+			</div>
+		</Reveal>
+	</div>
+</section>
+
+<script>
+	// Portrait captions re-resolve from random glyphs on hover.
+	const CHARS =
+		"01<>{}[]()/\\|=+-*&^%$#@!?;:.,_~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	const rnd = () => CHARS[(Math.random() * CHARS.length) | 0];
+	const wrap = document.querySelector<HTMLElement>("[data-portrait]");
+	const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+	if (wrap) {
+		const els = [
+			...wrap.querySelectorAll<HTMLElement>("[data-hover-scramble]"),
+		].map((el) => ({ el, text: el.textContent ?? "", timer: 0 }));
+
+		wrap.addEventListener("mouseenter", () => {
+			if (reduce.matches) return;
+			for (const item of els) {
+				const { el, text } = item;
+				let frame = 0;
+				clearInterval(item.timer);
+				item.timer = window.setInterval(() => {
+					frame++;
+					const solved = Math.floor(frame / 2);
+					let out = "";
+					for (let i = 0; i < text.length; i++) {
+						out += i < solved || text[i] === " " ? text[i] : rnd();
+					}
+					el.textContent = out;
+					if (solved >= text.length) {
+						clearInterval(item.timer);
+						el.textContent = text;
+					}
+				}, 35);
+			}
+		});
+	}
+</script>

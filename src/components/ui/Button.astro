@@ -1,0 +1,55 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+type Props = (HTMLAttributes<"a"> & HTMLAttributes<"button">) & {
+	/** Renders a link when set, otherwise a `<button type="button">`. */
+	href?: string;
+	variant?: "solid" | "outline" | "accent" | "ghost" | "icon";
+	size?: "xs" | "sm" | "md" | "lg";
+	/** Lift on hover (the design's -2px hover). */
+	lift?: boolean;
+};
+
+const {
+	href,
+	variant = "solid",
+	size = "md",
+	lift = true,
+	class: className,
+	...rest
+} = Astro.props;
+
+const Tag = href ? "a" : "button";
+
+const variants = {
+	solid: "bg-ink font-medium text-bg hover:bg-white",
+	outline:
+		"border border-white/16 text-ink hover:border-accent/60 hover:bg-accent/8",
+	ghost:
+		"border border-white/18 text-ink hover:border-accent/60 hover:bg-accent/8",
+	accent: "bg-accent font-medium text-bg hover:bg-accent-hover",
+	icon: "size-12 justify-center border border-white/16 font-mono text-xs text-muted hover:border-accent/60 hover:text-accent",
+};
+
+const sizes = {
+	xs: "px-4 py-2.25 text-btn-sm",
+	sm: "px-5 py-2.75 text-sm",
+	md: "px-5.5 py-3.25 text-btn",
+	lg: "px-6.5 py-3.5 text-body-sm",
+};
+---
+
+<Tag
+	href={href}
+	type={href ? undefined : "button"}
+	class:list={[
+		"inline-flex items-center gap-2.25 whitespace-nowrap rounded-full transition-[transform,background-color,border-color,color] duration-200",
+		variants[variant],
+		variant !== "icon" && sizes[size],
+		lift && "hover:-translate-y-0.5",
+		className,
+	]}
+	{...rest}
+>
+	<slot />
+</Tag>

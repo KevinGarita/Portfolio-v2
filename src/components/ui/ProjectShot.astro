@@ -1,0 +1,34 @@
+---
+interface Props {
+	src?: string;
+	alt: string;
+	/** Placeholder caption shown when there is no image. */
+	label: string;
+	class?: string;
+	stripes?: "lg" | "xl";
+}
+
+const { src, alt, label, class: className, stripes = "lg" } = Astro.props;
+---
+
+<div
+	class:list={[
+		"relative flex items-end overflow-hidden",
+		!src && (stripes === "lg" ? "pattern-stripes-lg" : "pattern-stripes-xl"),
+		className,
+	]}
+>
+	{
+		src ? (
+			<img
+				src={src}
+				alt={alt}
+				loading="lazy"
+				decoding="async"
+				class="absolute inset-0 size-full object-cover"
+			/>
+		) : (
+			<span class="font-mono text-label text-faint">{label}</span>
+		)
+	}
+</div>

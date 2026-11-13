@@ -1,0 +1,35 @@
+---
+import Reveal from "./Reveal.astro";
+
+interface Props {
+	eyebrow: string;
+	title: string;
+	/** The design alternates the eyebrow tone between sections. */
+	tone?: "dim" | "subtle";
+	class?: string;
+}
+
+const { eyebrow, title, tone = "dim", class: className } = Astro.props;
+const hasAside = Astro.slots.has("default");
+---
+
+<Reveal
+	class:list={[
+		hasAside &&
+			"flex flex-wrap items-baseline justify-between gap-6",
+		className,
+	]}
+>
+	<div>
+		<p
+			class:list={[
+				"mb-3.5 font-mono text-xs uppercase tracking-eyebrow",
+				tone === "dim" ? "text-dim" : "text-subtle",
+			]}
+		>
+			{eyebrow}
+		</p>
+		<h2 class="font-serif text-h2 font-normal tracking-[-0.015em]">{title}</h2>
+	</div>
+	<slot />
+</Reveal>

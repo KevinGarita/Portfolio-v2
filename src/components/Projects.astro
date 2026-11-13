@@ -1,0 +1,41 @@
+---
+import { getProjects } from "../data/queries";
+import { site } from "../data/site";
+import ProjectCard from "./ui/ProjectCard.astro";
+import Reveal from "./ui/Reveal.astro";
+import SectionHeading from "./ui/SectionHeading.astro";
+
+const [featured, ...rest] = await getProjects();
+---
+
+<section id="projects" class="scroll-mt-nav px-gutter pb-section">
+	<div class="mx-auto max-w-page">
+		<SectionHeading eyebrow="05 — Projects" title="Selected work" class="mb-10">
+			<a
+				href={site.repositories}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="link-underline pb-0.75 font-mono text-link uppercase tracking-[0.08em] text-muted hover:text-ink"
+			>
+				All repositories →
+			</a>
+		</SectionHeading>
+
+		<div class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-5">
+			{
+				featured && (
+					<Reveal class="col-span-full min-w-0">
+						<ProjectCard project={featured} featured />
+					</Reveal>
+				)
+			}
+			{
+				rest.map((project, i) => (
+					<Reveal delay={(i % 3) * 80} class="min-w-0">
+						<ProjectCard project={project} />
+					</Reveal>
+				))
+			}
+		</div>
+	</div>
+</section>

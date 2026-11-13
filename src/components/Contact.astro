@@ -1,0 +1,69 @@
+---
+import { contact, site } from "../data/site";
+import Button from "./ui/Button.astro";
+import Reveal from "./ui/Reveal.astro";
+
+const year = new Date().getFullYear();
+---
+
+<section
+	id="contact"
+	class="relative scroll-mt-nav overflow-hidden border-t border-white/8 px-gutter pt-contact pb-15"
+>
+	<div
+		class="glow-accent-soft pointer-events-none absolute -bottom-65 left-1/2 h-125 w-225 -translate-x-1/2"
+	>
+	</div>
+	<div class="relative mx-auto max-w-page text-center">
+		<Reveal
+			as="p"
+			class="mb-5.5 font-mono text-xs uppercase tracking-eyebrow text-dim"
+		>
+			06 — Contact
+		</Reveal>
+		<Reveal
+			as="h2"
+			delay={60}
+			class="mx-auto mb-6.5 max-w-[16ch] font-serif text-contact font-normal leading-[1.04] tracking-[-0.02em]"
+		>
+			{contact.heading.before}{" "}
+			<em class="italic text-accent">{contact.heading.accent}</em>
+		</Reveal>
+		<Reveal
+			as="p"
+			delay={100}
+			class="mx-auto mb-10.5 max-w-[52ch] text-lead leading-[1.65] text-muted"
+		>
+			{contact.lead}
+		</Reveal>
+		<Reveal delay={140} class="mb-15 flex flex-wrap justify-center gap-3">
+			<Button href={site.mailto} size="lg">{site.email}</Button>
+			<Button
+				href={site.cv}
+				variant="outline"
+				size="lg"
+				target="_blank"
+				rel="noopener noreferrer">Download CV</Button
+			>
+		</Reveal>
+		<Reveal
+			class="flex flex-wrap justify-center gap-7 border-t border-white/8 pt-8.5"
+		>
+			{
+				site.socials.map((s) => (
+					<a
+						href={s.href}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="link-underline pb-0.75 font-mono text-link uppercase tracking-caps text-subtle hover:text-ink"
+					>
+						{s.label}
+					</a>
+				))
+			}
+		</Reveal>
+		<p class="mt-13.5 font-mono text-label text-ghost">
+			© {year} {site.name}
+		</p>
+	</div>
+</section>

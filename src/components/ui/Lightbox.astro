@@ -1,0 +1,345 @@
+---
+/**
+ * Full-screen image viewer for case study screens. Every `<img>` inside an
+ * element marked `data-lightbox` becomes a trigger; images in the same
+ * container form one gallery (arrow keys / prev-next buttons).
+ */
+const control =
+	"grid size-11 cursor-pointer place-items-center rounded-full border border-white/16 bg-bg/70 p-0 text-ink backdrop-blur-[14px] transition-colors duration-200 hover:border-accent/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+---
+
+<dialog
+	data-lightbox-dialog
+	aria-label="Image viewer"
+	class="fixed inset-0 m-0 size-full max-h-none max-w-none overflow-hidden bg-transparent p-0 text-ink backdrop:bg-bg/94 backdrop:backdrop-blur-sm motion-safe:animate-lightbox-in motion-safe:backdrop:animate-lightbox-in"
+>
+	<div
+		data-lightbox-stage
+		class="absolute inset-0 flex touch-none items-center justify-center overflow-hidden px-4 py-20 select-none md:px-20"
+	>
+		<img
+			data-lightbox-image
+			alt=""
+			draggable="false"
+			class="max-h-full max-w-full cursor-zoom-in rounded-card will-change-transform data-dragging:cursor-grabbing data-instant:transition-none data-zoomed:cursor-zoom-out motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out-soft"
+		/>
+	</div>
+
+	<div
+		class="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between gap-4 px-4 pt-4 md:px-6 md:pt-6"
+	>
+		<span
+			data-lightbox-counter
+			aria-live="polite"
+			class="rounded-full bg-bg/70 px-3 py-1.5 font-mono text-label uppercase tracking-caps text-muted backdrop-blur-[14px] empty:hidden"
+		></span>
+		<button
+			type="button"
+			data-lightbox-close
+			aria-label="Close image viewer"
+			class:list={[control, "pointer-events-auto ml-auto"]}
+		>
+			<svg
+				viewBox="0 0 24 24"
+				aria-hidden="true"
+				class="size-4.5 fill-none stroke-current stroke-[1.75]"
+				><path d="M6 6l12 12M18 6L6 18"></path></svg
+			>
+		</button>
+	</div>
+
+	<button
+		type="button"
+		data-lightbox-prev
+		aria-label="Previous image"
+		class:list={[
+			control,
+			"absolute bottom-4 left-4 md:bottom-auto md:left-6 md:top-1/2 md:-translate-y-1/2",
+		]}
+	>
+		<svg
+			viewBox="0 0 24 24"
+			aria-hidden="true"
+			class="size-4.5 fill-none stroke-current stroke-[1.75]"
+			><path d="M15 5l-7 7 7 7"></path></svg
+		>
+	</button>
+	<button
+		type="button"
+		data-lightbox-next
+		aria-label="Next image"
+		class:list={[
+			control,
+			"absolute right-4 bottom-4 md:right-6 md:bottom-auto md:top-1/2 md:-translate-y-1/2",
+		]}
+	>
+		<svg
+			viewBox="0 0 24 24"
+			aria-hidden="true"
+			class="size-4.5 fill-none stroke-current stroke-[1.75]"
+			><path d="M9 5l7 7-7 7"></path></svg
+		>
+	</button>
+
+	<p
+		class="pointer-events-none absolute inset-x-0 bottom-0 mx-auto flex min-h-19 max-w-[62ch] items-center justify-center px-16 pb-4 text-center text-body-sm text-pretty text-ink-soft md:min-h-20 md:pb-6"
+	>
+		<span
+			data-lightbox-caption
+			class="rounded-card bg-bg/70 px-3 py-1.5 backdrop-blur-[14px] empty:hidden"
+		></span>
+	</p>
+</dialog>
+
+<script>
+	const dialog = document.querySelector<HTMLDialogElement>(
+		"[data-lightbox-dialog]",
+	);
+	const stage = dialog?.querySelector<HTMLElement>("[data-lightbox-stage]");
+	const view = dialog?.querySelector<HTMLImageElement>("[data-lightbox-image]");
+	const caption = dialog?.querySelector<HTMLElement>("[data-lightbox-caption]");
+	const counter = dialog?.querySelector<HTMLElement>("[data-lightbox-counter]");
+	const closeBtn = dialog?.querySelector<HTMLButtonElement>(
+		"[data-lightbox-close]",
+	);
+	const prevBtn = dialog?.querySelector<HTMLButtonElement>(
+		"[data-lightbox-prev]",
+	);
+	const nextBtn = dialog?.querySelector<HTMLButtonElement>(
+		"[data-lightbox-next]",
+	);
+
+	if (dialog && stage && view && caption && counter) {
+		const DRAG_THRESHOLD = 6;
+		const SWIPE_THRESHOLD = 60;
+		const WHEEL_SPEED = 0.0018;
+
+		let gallery: HTMLImageElement[] = [];
+		let index = 0;
+		let opener: HTMLImageElement | null = null;
+
+		// Transform state: translate(x, y) scale(scale), origin at the image
+		// centre. scale 1 = fitted to the screen.
+		let scale = 1;
+		let x = 0;
+		let y = 0;
+
+		// Scale at which one image pixel equals one screen pixel.
+		const actualScale = () =>
+			view.offsetWidth ? Math.max(view.naturalWidth / view.offsetWidth, 1) : 1;
+		// Clicking zooms to actual size; small images still get a usable zoom.
+		const clickScale = () => Math.max(actualScale(), 2);
+		const maxScale = () => Math.max(actualScale() * 2, 4);
+
+		function apply(animate = true) {
+			const limitX = Math.max(
+				0,
+				(view.offsetWidth * scale - stage.clientWidth) / 2,
+			);
+			const limitY = Math.max(
+				0,
+				(view.offsetHeight * scale - stage.clientHeight) / 2,
+			);
+			x = Math.min(limitX, Math.max(-limitX, x));
+			y = Math.min(limitY, Math.max(-limitY, y));
+			view.toggleAttribute("data-instant", !animate);
+			view.toggleAttribute("data-zoomed", scale > 1.001);
+			view.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+		}
+
+		/** Zoom to `next`, keeping the point under (clientX, clientY) still. */
+		function zoomAt(next: number, clientX: number, clientY: number, animate = true) {
+			const target = Math.min(maxScale(), Math.max(1, next));
+			const rect = stage.getBoundingClientRect();
+			const px = clientX - rect.left - rect.width / 2;
+			const py = clientY - rect.top - rect.height / 2;
+			const ratio = target / scale;
+			x = px - (px - x) * ratio;
+			y = py - (py - y) * ratio;
+			scale = target;
+			if (scale === 1) x = y = 0;
+			apply(animate);
+		}
+
+		function reset() {
+			scale = 1;
+			x = y = 0;
+			apply(false);
+		}
+
+		function show(i: number) {
+			index = (i + gallery.length) % gallery.length;
+			const img = gallery[index];
+			view.src = img.currentSrc || img.src;
+			view.alt = img.alt;
+			caption.textContent = img.alt;
+			counter.textContent =
+				gallery.length > 1 ? `${index + 1} / ${gallery.length}` : "";
+			const single = gallery.length < 2;
+			if (prevBtn) prevBtn.hidden = single;
+			if (nextBtn) nextBtn.hidden = single;
+			reset();
+		}
+
+		function open(img: HTMLImageElement) {
+			const scope = img.closest("[data-lightbox]");
+			gallery = scope
+				? [...scope.querySelectorAll<HTMLImageElement>("img[data-lightbox-trigger]")]
+				: [img];
+			opener = img;
+			show(gallery.indexOf(img));
+			document.body.classList.add("overflow-hidden");
+			dialog.showModal();
+			closeBtn?.focus();
+		}
+
+		// Enhance every image inside a `data-lightbox` container.
+		for (const img of document.querySelectorAll<HTMLImageElement>(
+			"[data-lightbox] img",
+		)) {
+			img.dataset.lightboxTrigger = "";
+			img.tabIndex = 0;
+			img.setAttribute("role", "button");
+			img.setAttribute("aria-haspopup", "dialog");
+			img.setAttribute(
+				"aria-label",
+				img.alt ? `Enlarge image: ${img.alt}` : "Enlarge image",
+			);
+			img.addEventListener("click", () => open(img));
+			img.addEventListener("keydown", (e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					open(img);
+				}
+			});
+		}
+
+		dialog.addEventListener("close", () => {
+			document.body.classList.remove("overflow-hidden");
+			view.removeAttribute("src");
+			opener?.focus({ preventScroll: true });
+			opener = null;
+		});
+
+		closeBtn?.addEventListener("click", () => dialog.close());
+		prevBtn?.addEventListener("click", () => show(index - 1));
+		nextBtn?.addEventListener("click", () => show(index + 1));
+
+		dialog.addEventListener("keydown", (e) => {
+			if (gallery.length < 2) return;
+			if (e.key === "ArrowLeft") show(index - 1);
+			else if (e.key === "ArrowRight") show(index + 1);
+		});
+
+		// Pointer handling: drag to pan, pinch to zoom, swipe to change image
+		// (when not zoomed). A press that doesn't move counts as a click.
+		const pointers = new Map<number, { x: number; y: number }>();
+		let moved = false;
+		let pinch: { distance: number; scale: number } | null = null;
+		let start = { x: 0, y: 0 };
+		let last = { x: 0, y: 0 };
+
+		const distance = () => {
+			const [a, b] = [...pointers.values()];
+			return Math.hypot(a.x - b.x, a.y - b.y);
+		};
+		const midpoint = () => {
+			const [a, b] = [...pointers.values()];
+			return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+		};
+
+		stage.addEventListener("pointerdown", (e) => {
+			if (e.button !== 0) return;
+			pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+			if (pointers.size === 1) {
+				moved = false;
+				start = last = { x: e.clientX, y: e.clientY };
+			} else if (pointers.size === 2) {
+				moved = true;
+				pinch = { distance: distance(), scale };
+			}
+		});
+
+		stage.addEventListener("pointermove", (e) => {
+			if (!pointers.has(e.pointerId)) return;
+			pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+			if (pinch && pointers.size === 2) {
+				const mid = midpoint();
+				zoomAt((pinch.scale * distance()) / pinch.distance, mid.x, mid.y, false);
+				return;
+			}
+			if (
+				!moved &&
+				Math.hypot(e.clientX - start.x, e.clientY - start.y) > DRAG_THRESHOLD
+			) {
+				moved = true;
+				stage.setPointerCapture(e.pointerId);
+			}
+			if (moved && scale > 1) {
+				view.setAttribute("data-dragging", "");
+				x += e.clientX - last.x;
+				y += e.clientY - last.y;
+				apply(false);
+			}
+			last = { x: e.clientX, y: e.clientY };
+		});
+
+		const endPointer = (e: PointerEvent) => {
+			if (!pointers.delete(e.pointerId)) return;
+			if (pointers.size < 2) pinch = null;
+			if (pointers.size > 0) {
+				// One finger left after a pinch: continue panning from it.
+				const [p] = pointers.values();
+				last = p;
+				return;
+			}
+			view.removeAttribute("data-dragging");
+			const dx = e.clientX - start.x;
+			if (
+				moved &&
+				scale === 1 &&
+				gallery.length > 1 &&
+				e.pointerType !== "mouse" &&
+				Math.abs(dx) > SWIPE_THRESHOLD &&
+				Math.abs(dx) > Math.abs(e.clientY - start.y)
+			) {
+				show(index + (dx < 0 ? 1 : -1));
+			}
+		};
+		stage.addEventListener("pointerup", endPointer);
+		stage.addEventListener("pointercancel", endPointer);
+
+		// Click on the image toggles fit ↔ actual size; click on the dark
+		// backdrop closes. Clicks that ended a drag or pinch are ignored.
+		stage.addEventListener("click", (e) => {
+			if (moved) return;
+			if (e.target === view) {
+				if (scale > 1) {
+					scale = 1;
+					x = y = 0;
+					apply();
+				} else {
+					zoomAt(clickScale(), e.clientX, e.clientY);
+				}
+			} else {
+				dialog.close();
+			}
+		});
+
+		stage.addEventListener(
+			"wheel",
+			(e) => {
+				e.preventDefault();
+				// Line/page deltas (some mice) are normalised to pixels.
+				const delta = e.deltaMode === 0 ? e.deltaY : e.deltaY * 16;
+				zoomAt(scale * Math.exp(-delta * WHEEL_SPEED), e.clientX, e.clientY, false);
+			},
+			{ passive: false },
+		);
+
+		window.addEventListener("resize", () => {
+			if (dialog.open) reset();
+		});
+	}
+</script>

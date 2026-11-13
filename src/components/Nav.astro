@@ -1,0 +1,212 @@
+---
+import { site } from "../data/site";
+
+const sections = [
+	{ id: "hero", label: "Home" },
+	{ id: "about", label: "About" },
+	{ id: "skills", label: "Skills" },
+	{ id: "education", label: "Education" },
+	{ id: "experience", label: "Experience" },
+	{ id: "projects", label: "Projects" },
+	{ id: "contact", label: "Contact" },
+];
+// Desktop shows the inner sections; Home is the logo and Contact is the CTA.
+const desktopLinks = sections.slice(1, -1);
+---
+
+<header
+	class="sticky top-0 z-80 border-b border-white/7 bg-bg/78 backdrop-blur-[14px]"
+>
+	<nav
+		aria-label="Main"
+		class="mx-auto flex h-nav max-w-page items-center justify-between gap-5 px-gutter"
+	>
+		<a href="#hero" class="flex flex-none items-center gap-2.5 text-ink">
+			<span class="block size-2.25 rounded-full bg-accent"></span>
+			<span class="font-mono text-mono uppercase tracking-[0.08em]">
+				{site.shortName}
+			</span>
+		</a>
+
+		<div class="hidden items-center gap-6 nav:flex">
+			{
+				desktopLinks.map((s) => (
+					<a
+						href={`#${s.id}`}
+						data-nav-link
+						class="link-underline whitespace-nowrap pb-0.5 text-sm text-muted hover:text-ink data-active:text-ink"
+					>
+						{s.label}
+					</a>
+				))
+			}
+			<a
+				href="#contact"
+				class="whitespace-nowrap rounded-full bg-accent px-4 py-2.25 text-mono font-medium text-bg transition-[transform,background-color] duration-200 hover:-translate-y-px hover:bg-accent-hover"
+			>
+				Contact
+			</a>
+		</div>
+
+		<div class="flex items-center gap-3 nav:hidden">
+			<span
+				data-nav-label
+				class="font-mono text-tiny uppercase tracking-[0.12em] text-accent"
+				>Home</span
+			>
+			<button
+				type="button"
+				data-menu-open
+				aria-label="Open menu"
+				aria-expanded="false"
+				aria-controls="mobile-menu"
+				class="flex size-11 cursor-pointer flex-col items-center justify-center gap-1.25 rounded-full border border-white/16 bg-white/3 p-0 transition-colors duration-200 hover:border-accent/60"
+			>
+				<span class="block h-[1.5px] w-4 bg-ink"></span>
+				<span class="block h-[1.5px] w-4 translate-x-0.75 bg-ink"></span>
+			</button>
+		</div>
+	</nav>
+</header>
+
+<div
+	id="mobile-menu"
+	hidden
+	role="dialog"
+	aria-modal="true"
+	aria-label="Menu"
+	class="fixed inset-0 z-110 flex flex-col overflow-y-auto bg-bg"
+>
+	<div
+		class="glow-menu pointer-events-none absolute -top-40 -right-30 size-105"
+	>
+	</div>
+	<div
+		class="relative flex h-nav items-center justify-between border-b border-white/7 px-gutter"
+	>
+		<span class="flex items-center gap-2.5">
+			<span class="block size-2.25 rounded-full bg-accent"></span>
+			<span class="font-mono text-mono uppercase tracking-[0.08em] text-ink">
+				{site.shortName}
+			</span>
+		</span>
+		<button
+			type="button"
+			data-menu-close
+			aria-label="Close menu"
+			class="size-11 cursor-pointer rounded-full border border-white/16 bg-transparent p-0 text-lg text-ink"
+			>✕</button
+		>
+	</div>
+	<div class="relative flex flex-1 flex-col justify-center px-gutter py-7">
+		{
+			sections.map((s, i) => (
+				<a
+					href={`#${s.id}`}
+					data-nav-link
+					data-label={s.label}
+					class="group flex items-baseline gap-4 border-b border-white/7 py-3"
+				>
+					<span class="w-5.5 font-mono text-label text-subtle group-data-active:text-accent">
+						{String(i).padStart(2, "0")}
+					</span>
+					<span class="font-serif text-menu leading-[1.05] text-ink group-data-active:text-accent group-data-active:italic">
+						{s.label}
+					</span>
+				</a>
+			))
+		}
+	</div>
+	<div class="relative flex flex-wrap gap-2.5 px-gutter pt-5.5 pb-7.5">
+		<a
+			href={site.mailto}
+			class="inline-flex items-center rounded-full bg-ink px-5.5 py-3.25 text-btn font-medium text-bg"
+			>Email</a
+		>
+		<a
+			href={site.cv}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="inline-flex items-center rounded-full border border-white/16 px-5.5 py-3.25 text-btn text-ink"
+			>Download CV</a
+		>
+	</div>
+</div>
+
+<script>
+	// Scrollspy: the active section is the last one whose top has crossed a
+	// line 30% down the viewport (below the sticky header).
+	const NAV_HEIGHT = 66;
+	const links = [
+		...document.querySelectorAll<HTMLAnchorElement>("[data-nav-link]"),
+	];
+	// Sections in document order (desktop and mobile links overlap).
+	const sections = [...new Set(links.map((a) => a.hash.slice(1)))]
+		.map((id) => document.getElementById(id))
+		.filter((el) => el !== null)
+		.sort((a, b) =>
+			a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+		);
+	const labels = new Map(
+		links
+			.filter((a) => a.dataset.label)
+			.map((a) => [a.hash.slice(1), a.dataset.label]),
+	);
+	const label = document.querySelector<HTMLElement>("[data-nav-label]");
+	let active = "";
+	let frame = 0;
+
+	function compute() {
+		frame = 0;
+		const line = NAV_HEIGHT + window.innerHeight * 0.3;
+		let current = sections[0]?.id ?? "";
+		for (const el of sections) {
+			if (el.getBoundingClientRect().top <= line) current = el.id;
+		}
+		const atBottom =
+			window.innerHeight + window.scrollY >=
+			document.documentElement.scrollHeight - 4;
+		if (atBottom) current = sections[sections.length - 1]?.id ?? current;
+		if (current === active) return;
+		active = current;
+		for (const a of links) {
+			a.toggleAttribute("data-active", a.hash === `#${current}`);
+			if (a.hash === `#${current}`) a.setAttribute("aria-current", "true");
+			else a.removeAttribute("aria-current");
+		}
+		if (label) label.textContent = labels.get(current) ?? "";
+	}
+
+	const schedule = () => {
+		if (!frame) frame = requestAnimationFrame(compute);
+	};
+	window.addEventListener("scroll", schedule, { passive: true });
+	window.addEventListener("resize", schedule);
+	compute();
+
+	// Mobile menu
+	const menu = document.getElementById("mobile-menu");
+	const openBtn = document.querySelector<HTMLButtonElement>("[data-menu-open]");
+	const closeBtn =
+		document.querySelector<HTMLButtonElement>("[data-menu-close]");
+
+	function setMenu(open: boolean) {
+		if (!menu || menu.hidden === !open) return;
+		menu.hidden = !open;
+		document.body.classList.toggle("overflow-hidden", open);
+		openBtn?.setAttribute("aria-expanded", String(open));
+		(open ? closeBtn : openBtn)?.focus({ preventScroll: true });
+	}
+
+	openBtn?.addEventListener("click", () => setMenu(true));
+	closeBtn?.addEventListener("click", () => setMenu(false));
+	menu?.querySelectorAll("a").forEach((a) => {
+		a.addEventListener("click", () => setMenu(false));
+	});
+	document.addEventListener("keydown", (e) => {
+		if (e.key === "Escape") setMenu(false);
+	});
+	window.matchMedia("(min-width: 900px)").addEventListener("change", (e) => {
+		if (e.matches) setMenu(false);
+	});
+</script>

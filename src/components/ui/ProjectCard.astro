@@ -1,0 +1,114 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { yearRange } from "../../data/queries";
+import Button from "./Button.astro";
+import ProjectShot from "./ProjectShot.astro";
+import Tag from "./Tag.astro";
+
+interface Props {
+	project: CollectionEntry<"projects">;
+	featured?: boolean;
+}
+
+const { project, featured = false } = Astro.props;
+const { title, description, image, skills, demoLink, sourceLink } =
+	project.data;
+const href = `/projects/${project.id}/`;
+const years = yearRange(project.data.startDate, project.data.endDate);
+const links = [
+	demoLink && { label: "Live ↗", href: demoLink },
+	sourceLink && { label: "Source ↗", href: sourceLink },
+].filter((l) => !!l);
+---
+
+<article
+	class:list={[
+		"relative h-full min-w-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.022] transition-[translate,border-color] duration-300 ease-out-soft hover:-translate-y-1 hover:border-accent/42",
+		featured && "grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))]",
+	]}
+>
+	<ProjectShot
+		src={image}
+		alt={`${title} screenshot`}
+		label={featured ? "project shot / 16:10" : "project shot"}
+		class={featured
+			? "min-h-[290px] border-r border-white/8 p-4.5"
+			: "h-40 border-b border-white/8 p-4"}
+	/>
+	<div class:list={[featured ? "flex flex-col justify-center p-8" : "p-6"]}>
+		{
+			featured ? (
+				<p class="mb-3.5 font-mono text-tiny uppercase tracking-[0.12em] text-accent">
+					Featured · {years}
+				</p>
+			) : (
+				<p class="mb-2 font-mono text-label tracking-[0.09em] text-subtle">
+					{years}
+				</p>
+			)
+		}
+		<h3
+			class:list={[
+				"text-ink",
+				featured
+					? "mb-3 font-serif text-card font-normal"
+					: "mb-2.5 text-title font-medium",
+			]}
+		>
+			{title}
+		</h3>
+		<p
+			class:list={[
+				"text-muted",
+				featured
+					? "mb-5.5 max-w-[44ch] text-body leading-[1.65]"
+					: "mb-4.5 text-btn leading-[1.62]",
+			]}
+		>
+			{description}
+		</p>
+		<div class:list={["flex flex-wrap gap-2", featured ? "mb-6.5" : "mb-4.5"]}>
+			{skills.map((skill) => <Tag>{skill}</Tag>)}
+		</div>
+		<div
+			class:list={[
+				"flex flex-wrap items-center",
+				featured ? "gap-4.5" : "gap-4",
+			]}
+		>
+			{
+				featured ? (
+					<Button href={href} size="sm" class="relative z-10">
+						View case study →
+					</Button>
+				) : (
+					<Button
+						href={href}
+						variant="ghost"
+						size="xs"
+						lift={false}
+						class="relative z-10"
+					>
+						Case study →
+					</Button>
+				)
+			}
+			{
+				links.map((l) => (
+					<a
+						href={l.href}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="link-underline relative z-10 pb-0.5 text-sm text-muted hover:text-ink"
+					>
+						{l.label}
+					</a>
+				))
+			}
+		</div>
+	</div>
+	{/* Covers the whole card so a click anywhere opens the case study. Kept out of the tab order: the visible button is the keyboard target. */}
+	<a href={href} tabindex="-1" class="absolute inset-0">
+		<span class="sr-only">{title} case study</span>
+	</a>
+</article>

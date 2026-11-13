@@ -1,0 +1,25 @@
+---
+interface Props {
+	items: string[];
+}
+
+const { items } = Astro.props;
+---
+
+<div
+	class="mask-fade-x relative mt-24 overflow-hidden border-y border-white/7 py-5.5"
+>
+	<div class="flex w-max animate-marquee motion-reduce:animate-none">
+		{
+			[0, 1].map((copy) => (
+				<ul class="flex" aria-hidden={copy === 1 ? "true" : undefined}>
+					{items.map((item) => (
+						<li class="whitespace-nowrap px-7.5 font-mono text-mono tracking-[0.06em] text-subtle">
+							{item}
+						</li>
+					))}
+				</ul>
+			))
+		}
+	</div>
+</div>

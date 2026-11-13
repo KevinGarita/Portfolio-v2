@@ -1,0 +1,35 @@
+---
+import type { HTMLTag, Polymorphic } from "astro/types";
+
+type Props<Tag extends HTMLTag = "div"> = Polymorphic<{
+	as: Tag;
+	/** Extra delay (ms) once the element enters the viewport. */
+	delay?: number;
+}>;
+
+const { as: Tag = "div", delay, ...rest } = Astro.props;
+---
+
+<Tag data-reveal data-reveal-delay={delay} {...rest}><slot /></Tag>
+
+<script>
+	// Fade/slide elements in as they enter the viewport. The hidden start state
+	// only applies under `.js` (set in the layout), so content stays visible
+	// without JS; reduced motion is handled in CSS.
+	const els = document.querySelectorAll<HTMLElement>("[data-reveal]");
+	const io = new IntersectionObserver(
+		(entries) => {
+			for (const entry of entries) {
+				if (!entry.isIntersecting) continue;
+				const el = entry.target as HTMLElement;
+				setTimeout(
+					() => el.setAttribute("data-revealed", ""),
+					Number(el.dataset.revealDelay ?? 0),
+				);
+				io.unobserve(el);
+			}
+		},
+		{ rootMargin: "0px 0px -8% 0px", threshold: 0.06 },
+	);
+	for (const el of els) io.observe(el);
+</script>

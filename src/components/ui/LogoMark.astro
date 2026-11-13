@@ -1,0 +1,32 @@
+---
+interface Props {
+	src?: string;
+	alt: string;
+	class?: string;
+}
+
+const { src, alt, class: className } = Astro.props;
+---
+
+{
+	src ? (
+		<img
+			src={src}
+			alt={alt}
+			loading="lazy"
+			decoding="async"
+			class:list={[
+				"flex-none rounded-lg object-contain",
+				className,
+			]}
+		/>
+	) : (
+		<span
+			aria-hidden="true"
+			class:list={[
+				"pattern-stripes block flex-none rounded-lg border border-white/12",
+				className,
+			]}
+		/>
+	)
+}

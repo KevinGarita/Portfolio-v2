@@ -1,0 +1,107 @@
+---
+import { render } from "astro:content";
+import { getWork, yearRange } from "../data/queries";
+import Button from "./ui/Button.astro";
+import LogoMark from "./ui/LogoMark.astro";
+import Reveal from "./ui/Reveal.astro";
+import SectionHeading from "./ui/SectionHeading.astro";
+
+const jobs = await Promise.all(
+	(await getWork()).map(async (entry) => ({
+		...entry.data,
+		Content: (await render(entry)).Content,
+	})),
+);
+
+// Roles shown up front; the rest are revealed STEP at a time by the button.
+const INITIAL = 3;
+const STEP = 3;
+const earlier = jobs.length - INITIAL;
+---
+
+<section id="experience" class="scroll-mt-nav px-gutter pb-section">
+	<div class="mx-auto max-w-page">
+		<SectionHeading
+			eyebrow="04 — Experience"
+			title="Career path"
+			tone="subtle"
+			class="mb-10"
+		/>
+		<div class="border-b border-white/9">
+			{
+				jobs.map(({ Content, ...job }, i) => (
+					<Reveal
+						as="article"
+						class="relative overflow-hidden border-t border-white/9 py-11.5 focus:outline-none"
+						data-more-item={i >= INITIAL ? "" : undefined}
+						tabindex={i >= INITIAL ? -1 : undefined}
+					>
+						<span
+							aria-hidden="true"
+							class="pointer-events-none absolute -top-1.5 right-0 font-serif text-year leading-none tracking-[-0.03em] text-white/[0.035]"
+						>
+							{job.startDate.getUTCFullYear()}
+						</span>
+						<div class="relative grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-9">
+							<div>
+								<div class="mb-4.5 flex items-center gap-3.5">
+									<LogoMark src={job.logo} alt={`${job.title} logo`} class="size-12" />
+									<span class="font-mono text-xs uppercase tracking-[0.08em] text-accent">
+										{yearRange(job.startDate, job.endDate)}
+										{job.location && ` · ${job.location}`}
+									</span>
+								</div>
+								<h3 class="mb-2 font-serif text-h2 font-normal leading-[1.05] tracking-[-0.015em] text-ink">
+									{job.subtitle}
+								</h3>
+								<p class="text-body-sm text-muted">{job.title}</p>
+							</div>
+							<div class="prose-entry max-w-[62ch] self-center text-body leading-[1.78]">
+								<Content />
+							</div>
+						</div>
+					</Reveal>
+				))
+			}
+		</div>
+		{
+			earlier > 0 && (
+				<div class="mt-12 flex justify-center" data-more-controls hidden>
+					<Button variant="outline" size="lg" data-step={STEP}>
+						<span>
+							Show earlier roles (<span data-more-count>{earlier}</span>)
+						</span>
+						<span aria-hidden="true">↓</span>
+					</Button>
+				</div>
+			)
+		}
+	</div>
+</section>
+
+<script>
+	// "Show earlier roles": older entries stay hidden only once JS is running
+	// (see `[data-more-item]` in global.css), so without JS every role shows.
+	const controls = document.querySelector<HTMLElement>("[data-more-controls]");
+	const button = controls?.querySelector<HTMLButtonElement>("button");
+	const count = controls?.querySelector("[data-more-count]");
+	if (controls && button && count) {
+		const step = Number(button.dataset.step);
+		const pending = () =>
+			document.querySelectorAll<HTMLElement>(
+				"[data-more-item]:not([data-more-shown])",
+			);
+		controls.hidden = false;
+		button.addEventListener("click", () => {
+			const next = [...pending()].slice(0, step);
+			for (const el of next) el.setAttribute("data-more-shown", "");
+			const left = pending().length;
+			count.textContent = String(left);
+			// The button disappears with the last batch; keep focus in the list.
+			if (left === 0) {
+				controls.hidden = true;
+				next[0]?.focus();
+			}
+		});
+	}
+</script>
