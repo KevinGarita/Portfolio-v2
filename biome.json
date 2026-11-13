@@ -6,7 +6,8 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": ["**", "!design-reference"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -30,5 +31,13 @@
 				"organizeImports": "on"
 			}
 		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"html": {
+		"experimentalFullSupportEnabled": true
 	}
 }
