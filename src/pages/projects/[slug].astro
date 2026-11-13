@@ -1,0 +1,227 @@
+---
+import { render } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import Button from "../../components/ui/Button.astro";
+import Lightbox from "../../components/ui/Lightbox.astro";
+import ProjectShot from "../../components/ui/ProjectShot.astro";
+import Tag from "../../components/ui/Tag.astro";
+import { duration, getProjects, monthRange } from "../../data/queries";
+import { site } from "../../data/site";
+import Layout from "../../layouts/Layout.astro";
+
+export const getStaticPaths = (async () => {
+	const projects = await getProjects();
+	return projects.map((project, i) => ({
+		params: { slug: project.id },
+		props: {
+			project,
+			featured: i === 0,
+			next:
+				projects.length > 1 ? projects[(i + 1) % projects.length] : undefined,
+		},
+	}));
+}) satisfies GetStaticPaths;
+
+const { project, featured, next } = Astro.props;
+const {
+	title,
+	description,
+	image,
+	skills,
+	startDate,
+	endDate,
+	demoLink,
+	sourceLink,
+} = project.data;
+const { Content, headings } = await render(project);
+const toc = headings.filter((h) => h.depth === 2);
+
+const meta = [
+	{ label: "Timeline", value: monthRange(startDate, endDate) },
+	{ label: "Duration", value: duration(startDate, endDate) },
+	{ label: "Year", value: String(endDate.getUTCFullYear()) },
+	{ label: "Stack", value: skills.slice(0, 3).join(", ") },
+];
+---
+
+<Layout title={`${title} — ${site.name}`} description={description}>
+	<header
+		class="sticky top-0 z-80 border-b border-white/7 bg-bg/78 backdrop-blur-[14px]"
+	>
+		<div
+			class="mx-auto flex h-nav max-w-case items-center justify-between gap-5 px-7"
+		>
+			<a
+				href="/#projects"
+				class="inline-flex items-center gap-2.25 text-sm text-muted transition-colors duration-200 hover:text-ink"
+				>← Back to portfolio</a
+			>
+			<span class="font-mono text-label uppercase tracking-caps text-dim">
+				Case study
+			</span>
+		</div>
+	</header>
+
+	<main class="mx-auto max-w-case px-gutter pt-case-top pb-27.5">
+		<p
+			class="mb-4.5 font-mono text-xs uppercase tracking-[0.12em] text-accent"
+		>
+			{featured ? "Featured case study" : "Case study"}
+		</p>
+		<h1
+			class="mb-6 font-serif text-case font-normal leading-[1.02] tracking-[-0.02em]"
+		>
+			{title}
+		</h1>
+		<p class="mb-10 max-w-[58ch] text-title leading-[1.65] text-pretty text-muted">
+			{description}
+		</p>
+
+		<div class="mb-11.5 flex flex-wrap gap-2">
+			{skills.map((skill) => <Tag size="md">{skill}</Tag>)}
+		</div>
+
+		<ProjectShot
+			src={image}
+			alt={`${title} screenshot`}
+			label="hero shot / 16:9"
+			stripes="xl"
+			class="mb-14 aspect-video rounded-xl border border-white/10 p-5"
+		/>
+
+		<dl
+			class="mb-16 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-6.5 border-y border-white/9 py-7"
+		>
+			{
+				meta.map((m) => (
+					<div>
+						<dt class="mb-2 font-mono text-tiny uppercase tracking-caps text-dim">
+							{m.label}
+						</dt>
+						<dd class="text-body-sm text-ink">{m.value}</dd>
+					</div>
+				))
+			}
+		</dl>
+
+		<div class="case-body mb-18">
+			<nav class="case-toc" aria-label="On this page">
+				<div class="case-toc-inner">
+				<p class="mb-5 font-mono text-label uppercase tracking-caps text-dim">
+					On this page
+				</p>
+				<ul class="space-y-3 border-l border-white/9">
+					{
+						toc.map((h) => (
+							<li>
+								<a
+									href={`#${h.slug}`}
+									data-toc-link={h.slug}
+									class="-ml-px block border-l border-transparent pl-4 text-body-sm leading-snug text-faint transition-colors duration-200 hover:text-ink data-active:border-accent data-active:text-ink"
+								>
+									{h.text}
+								</a>
+							</li>
+						))
+					}
+				</ul>
+				</div>
+			</nav>
+			<div class="prose-case" data-lightbox>
+				<Content />
+			</div>
+		</div>
+
+		<div
+			class="flex flex-wrap items-center gap-3 border-t border-white/9 pt-10"
+		>
+			{
+				demoLink && (
+					<Button href={demoLink} target="_blank" rel="noopener noreferrer">
+						Visit live site ↗
+					</Button>
+				)
+			}
+			{
+				sourceLink && (
+					<Button
+						href={sourceLink}
+						variant="outline"
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						View source ↗
+					</Button>
+				)
+			}
+			{
+				next && (
+					<a
+						href={`/projects/${next.id}/`}
+						class="ml-auto text-right text-btn text-muted transition-colors duration-200 hover:text-ink"
+					>
+						Next project: {next.data.title} →
+					</a>
+				)
+			}
+		</div>
+	</main>
+
+	<Lightbox />
+</Layout>
+
+<script>
+	// Scrollspy for the "On this page" index: the active section is the last
+	// heading that has scrolled past the top band (or the last one at the very
+	// bottom of the page, where short final sections can't reach that band).
+	const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")];
+	const headings = links
+		.map((a) => document.getElementById(a.dataset.tocLink ?? ""))
+		.filter((h): h is HTMLElement => h !== null);
+
+	const setActive = (id: string | undefined) => {
+		for (const a of links) a.toggleAttribute("data-active", a.dataset.tocLink === id);
+	};
+
+	let lockedUntil = 0;
+	let clicked: string | undefined;
+	let ticking = false;
+	const update = () => {
+		ticking = false;
+		if (performance.now() < lockedUntil || headings.length === 0) return;
+		const atBottom =
+			window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+		const line = window.innerHeight * 0.3;
+		let current = headings[0];
+		for (const h of headings) if (h.getBoundingClientRect().top <= line) current = h;
+		if (!atBottom) clicked = undefined;
+		// At the bottom, keep a clicked section that the page couldn't scroll past
+		const clickedTop = clicked && document.getElementById(clicked)?.getBoundingClientRect().top;
+		const keepClicked =
+			atBottom && typeof clickedTop === "number" && clickedTop >= 0 && clickedTop < window.innerHeight;
+		setActive(keepClicked ? clicked : atBottom ? headings.at(-1)?.id : current.id);
+	};
+
+	window.addEventListener(
+		"scroll",
+		() => {
+			if (!ticking) {
+				ticking = true;
+				requestAnimationFrame(update);
+			}
+		},
+		{ passive: true },
+	);
+
+	// A clicked entry stays active while the page scrolls to it
+	for (const a of links) {
+		a.addEventListener("click", () => {
+			clicked = a.dataset.tocLink;
+			setActive(clicked);
+			lockedUntil = performance.now() + 900;
+			setTimeout(update, 950);
+		});
+	}
+
+	update();
+</script>
