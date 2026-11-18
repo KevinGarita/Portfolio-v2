@@ -232,6 +232,15 @@ This was my first time writing automated tests and a deployment pipeline.
 
 ![GitHub Actions run of the production deploy: lint, unit and database tests, then the browser tests in three engines in parallel, then the deploy](/projects/laura-monge-platform-rebuild/github-actions-pipeline.webp)
 
+## User manual
+
+The client gets a manual inside the panel, written in Spanish for the team that uses it every day. Every screen has a "?" button that opens the manual at the part that explains it, and so do the sections inside a screen that are easier to get wrong, so the answer is one click away from where the question comes up.
+
+- A Playwright script takes the manual's screenshots from a local copy with demo data and draws the numbered marks the text explains. When the interface changes, running it again retakes them, so the manual doesn't fall behind the panel.
+- 19 short videos are recorded by script the same way, with an animated pointer, a highlight on each click and captions, and each chapter links to its own.
+
+![Properties screen with the "?" button next to the title](/projects/laura-monge-platform-rebuild/help-button.webp) ![Help page open at the properties list, with an annotated screenshot and the numbered steps it explains](/projects/laura-monge-platform-rebuild/help.webp)
+
 ## Results
 
 There are no business metrics yet, since the new version was being prepared for launch. The engineering numbers:
